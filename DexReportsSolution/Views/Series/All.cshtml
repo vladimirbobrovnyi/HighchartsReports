@@ -1,0 +1,84 @@
+﻿
+
+
+<div>
+    <div class="row">
+        <div class="col-md-6 text-left">
+            <h3>Графики</h3>
+        </div>
+
+        <div class="col-md-6 text-right">
+            <a href="#add-series-modal" data-toggle="modal"><input type="button" value="Добавить" id="addseries" class="btn btn-primary"></a>
+        </div>
+    </div>
+
+
+    <table class="table table-hover table-bordered">
+        <tr>
+            <th class="text-center">№</th>
+            <th class="text-center" colspan="3">Название тега</th>
+        </tr>
+
+        @foreach (var s in ViewBag.Series)
+        {
+            <tr>
+                <th class="text-center">@s.Id</th>
+                <th>@s.Label</th>
+                <th class="text-center"><a href="/Series/Edit/@s.Id" name="edit"><span class="glyphicon glyphicon-pencil text-warning" id="edit"></span></a></th>
+                <th class="text-center"><a href="/Series/Delete/@s.Id" name="delete"><span class="glyphicon glyphicon-remove text-danger"></span></a></th>
+            </tr>
+        }
+    </table>
+</div>
+
+@{Html.RenderPartial("Add"); }
+@{Html.RenderPartial("Edit"); }
+@{Html.RenderPartial("Delete");}
+
+
+@section scripts
+{
+    <script type="text/javascript" src="~/Scripts/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="~/Scripts/moment-with-locales.min.js"></script>
+    <script type="text/javascript" src="~/Scripts/Charts/bootstrap.min.js"></script>
+    <script type="text/javascript" src="~/Scripts/bootstrap-datetimepicker.min.js"></script>
+    <link rel="stylesheet" href="~/Content/bootstrap-datetimepicker.min.css" />
+    <link rel="stylesheet" href="~/Content/bootstrap.min.css" />
+
+    <script type="text/javascript">
+
+        $(function () {
+            $.ajaxSetup({ cache: false });
+            $("a[name='edit']").click(function (e) {
+                e.preventDefault();
+                $.get(this.href, function (data) {
+                    $('#edit-series-form').html(data);
+                    $('#edit-series-modal').modal('show');
+                });
+            });
+        })
+
+        $(function () {
+            $.ajaxSetup({ cache: false });
+            $("a[name='delete']").click(function (e) {
+                e.preventDefault();
+                var r = $(this).attr("href");
+                $.get(this.href, function (data) {
+                    $('#delete-series-form').html(data);
+                    $('#delete-series-modal').modal('show');
+                });
+            });
+        })
+
+    </script>
+
+}
+
+
+
+
+
+
+
+
+

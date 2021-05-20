@@ -1,0 +1,300 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+    <div id="mySidenav" class="sidenav">
+        <div class="col-sm-6 col-md-12">
+            <div class="col-md-10">
+                <label for="sdate">Начало периода</label>
+            </div>
+            <div class="col-md-2">
+                <a href="javascript:void(0)" class="closebtn col-md-2" onclick="closeNav()">&#9776;</a>
+            </div>
+
+                <input type="text" class="form-control" name="startdate" id="sdate">
+                <label for="edate">Конец периода</label>
+                <input type="text" class="form-control" name="enddate" id="edate">
+                <div class="vertical-menu">
+                    @foreach (var s in ViewBag.Series)
+                    {
+                        <a><input type="button" value="+" id="@s.Id" class="btn btn-success" name="@s.Label">  @s.Label</a>
+                    }
+                </div>
+                <input type="button" value="Удалить" id="removeseries" class="btn btn-danger">
+            </div>
+    </div>
+        <div class="container">
+            <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+            <div id="chartArea"></div>
+            <aside class="col-sm-12 col-md-4 col-lg-3">
+                <div class="row">
+                    <div class="col-sm-6 col-md-12">
+                       
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+
+<!---   <div class="col-md-4">
+
+    </div>-->
+<!---   <div class="col-md-2">
+       <center>
+           <input type="button" value="Добавить круговую диаграмму" id="addpie" class="btn btn-success">
+       </center>
+   </div> --->
+
+
+@section scripts
+{
+    <script type="text/javascript" src="~/Scripts/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="~/Scripts/moment-with-locales.min.js"></script>
+    <script type="text/javascript" src="~/Scripts/bootstrap.min.js"></script>
+    <script type="text/javascript" src="~/Scripts/bootstrap-datetimepicker.min.js"></script>
+    <link rel="stylesheet" href="~/Content/bootstrap-datetimepicker.min.css" />
+    <link rel="stylesheet" href="~/Content/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/Content/vertical-menu.css" />
+    <script src="~/Scripts/Charts/highcharts.js"></script>
+    <script>
+
+        $(document)
+        .ready(function () {
+                    $('#sdate').val('24.09.2017 00:01')
+                    $('#edate').val('03.10.2017 23:59')
+                    var start = moment(document.getElementById("sdate").value, "DD.MM.YYYY hh:mm").unix()
+                    var end = moment(document.getElementById("edate").value, "DD.MM.YYYY hh:mm").unix()
+                    var number = 1
+                    $.ajax({
+                        type: "GET",
+                        url: '../Home/GetChartData/' + start + '' + end + '' + number,
+                        dataType: "json",
+                        success: function (data) {
+
+                            var series = [
+                                {
+                                    type: 'line',
+                                    name: '@ViewBag.Label',
+                                    lineWidth: 1,
+                                    data: data
+                                },
+                            ];
+
+                            createChart("#chartArea", "График", series);
+                            var chart = $('#chartArea').highcharts();
+                            chart.series[0].remove();
+                        }
+                    });
+
+                });
+
+        $("input[value='+'")
+           .click(function (event) {
+               //var period = $('#sdate').val + $('#edate').val()
+               //var period = document.getElementById("sdate").value + ',' + document.getElementById("edate").value
+               var start = moment(document.getElementById("sdate").value, "DD.MM.YYYY hh:mm").unix()
+               var end = moment(document.getElementById("edate").value, "DD.MM.YYYY hh:mm").unix()
+               var number = event.target.id
+               var sLabel = event.target.name
+               var chart = $('#chartArea').highcharts();
+               chart.showLoading('Загрузка данных...')
+                   $.ajax({
+                       type: "GET",
+                       url: '../Home/GetChartData/' + start + '' + end + '' + number,
+                       dataType: "json",
+                       success: function (data) {
+
+                           var series = [
+                               {
+                                   type: 'line',
+                                   name: 'Added trend',
+                                   lineWidth: 1,
+                                   data: data
+                               },
+                           ];
+                           chart.addSeries({
+                               name: sLabel,
+                               turboThreshold: 5000000,
+                               data: data
+                           });
+                           chart.hideLoading();
+                       }
+                   });
+               });
+
+            $('#removeseries')
+               .click(function () {
+                   var chart = $('#chartArea').highcharts();
+                   chart.series[0].remove();
+               });
+
+            $('#addpie')
+               .click(function () {
+                   var chart = $('#pieArea').highcharts();
+                   var start = moment(document.getElementById("sdate").value, "DD.MM.YYYY hh:mm").unix()
+                   var end = moment(document.getElementById("edate").value, "DD.MM.YYYY hh:mm").unix()
+                   var number = document.getElementById("bnum").value
+                   $.ajax({
+                       type: "GET",
+                       url: '../Home/GetPieData/',
+                       dataType: "json",
+                       success: function (data) {
+
+                           var series = [
+                               {
+                                   type: 'pie',
+                                   name: 'Время работы',
+                                   colorByPoint: true,
+                                   data: data
+                               },
+                           ];
+
+                           createPie("#pieArea", "Время работы скважин", series);
+                       }
+                   });
+               });
+
+        function createChart(chartcontainer, title, series) {
+            Highcharts.setOptions({
+                lang: {
+                    loading: 'Загрузка данных. Подождите...',
+                    resetZoom: 'Сбросить',
+                    months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+                    shortMonths: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+                    weekdays: ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресение'],
+                    shortWeekdays: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                    noData: 'Нет данных',
+                    printChart: 'Печать',
+
+
+                },
+            }),
+
+            $(chartcontainer)
+                  .highcharts({
+                      chart: {
+                          type: 'line',
+                          zoomType: 'xy'
+                      },
+                      credits: {
+                          enabled: false,
+                      },
+                      xAxis: {
+                          type: 'datetime',
+                          dateTimeLabelFormats: {
+                              second: '%H:%M:%S',
+                              minute: '%H:%M',
+                              hour: '%H:%M',
+                              day: '%d.%m.%Y',
+                              month: '%b \'%y',
+                              year: '%Y'
+                          }
+                      },
+                      yAxis: {
+                          title: {
+                              text: 'Значения'
+                          },
+                      },
+
+                      exporting: {
+                          enabled: true,
+                      },
+                      plotOptions: {
+                          area: {
+                              marker: {
+                                  radius: 0.5
+                              },
+                              lineWidth: 1,
+                              states: {
+                                  hover: {
+                                      lineWidth: 1
+                                  }
+                              },
+                          }
+                      },
+
+                      tooltip: {
+                          crosshairs: true,
+                          shared: true,
+                          dateTimeLabelFormats: {
+                              millisecond: "Дата: %e, %b %Y %H:%M:%S.%L",
+                              second: "Дата: %e, %b %Y %H:%M:%S.%L",
+                              minute: "Дата: %e, %b %Y %H:%M:%S.%L",
+                              hour: "Дата: %e, %b %Y %H:%M:%S.%L",
+                              day: "Дата: %e, %b %Y %H:%M:%S.%L",
+                              week: "Дата: %e, %b %Y %H:%M:%S.%L",
+                              month: "Дата: %e, %b %Y %H:%M:%S.%L",
+                              year: "Дата: %e, %b %Y %H:%M:%S.%L"
+                          }
+                      },
+
+                      series: series,
+                      title: {
+                          text: title
+                      }
+                  });
+        }
+
+        function createPie(piecontainer, title, series) {
+
+            $(piecontainer)
+                  .highcharts({
+                      chart: {
+                          type: 'pie',
+                          zoomType: 'xy'
+                      },
+
+                      title: {
+                          text: 'Время работы насосов скважин за период'
+                      },
+
+                      plotOptions: {
+                          pie: {
+                              allowPointSelect: true,
+                              cursor: 'pointer',
+                              dataLabels: {
+                                  enabled: false
+                              },
+                              showInLegend: true
+                          }
+                      },
+
+                      tooltip: {
+                          pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                      },
+
+                      series: series
+                  });
+        }
+
+    </script>
+
+    <script type="text/javascript">
+           $(function () {
+               $('#sdate').datetimepicker({ language: 'ru' });
+               $('#edate').datetimepicker({ language: 'ru' });
+           });
+
+           function openNav() {
+               document.getElementById("mySidenav").style.width = "350px";
+               document.getElementById("chartArea").style.marginLeft = "100px";
+           }
+
+           function closeNav() {
+               document.getElementById("mySidenav").style.width = "0";
+               document.getElementById("chartArea").style.marginLeft = "0";
+           }
+
+    </script>
+
+
+}
+
+
+
+
+
+
+
+
+
